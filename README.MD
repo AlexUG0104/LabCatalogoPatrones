@@ -7,16 +7,38 @@
 
 # Descripción General
 
-En este laboratorio se implementaron cuatro patrones de diseño clásicos para resolver problemas comunes de arquitectura de software en el sistema BovWeight CR.
-
-Los patrones implementados fueron:
+En este laboratorio se implementaron cuatro patrones de diseño en un único proyecto:
 
 1. Factory
 2. Repository
 3. Observer
 4. Strategy
 
-Cada patrón se desarrolló dentro del mismo proyecto, utilizando una estructura organizada por carpetas (`Contracts`, `Factories`, `Repositories`, `Observers`, `Strategies`, `Services`, `ValueObjects`, `Models`, `Domain`).
+Además, se incluyó:
+
+* Un archivo `README.md` con la explicación del proyecto.
+* Una prueba (`RegistroPesoSubjectTest.php`) para verificar el patrón Observer.
+* Ejemplos y comentarios en el código para facilitar el estudio.
+
+---
+
+# Estructura General del Proyecto
+
+```text
+LabCatalogoPatrones/
+├── app/
+│   ├── Contracts/
+│   ├── Domain/
+│   ├── Factories/
+│   ├── Models/
+│   ├── Observers/
+│   ├── Repositories/
+│   ├── Services/
+│   ├── Strategies/
+│   ├── ValueObjects/
+│   └── tests/
+└── README.md
+```
 
 ---
 
@@ -26,37 +48,30 @@ Cada patrón se desarrolló dentro del mismo proyecto, utilizando una estructura
 
 El patrón Factory centraliza la creación de objetos.
 
-En lugar de usar directamente instrucciones como:
-
-```php
-new Brahman();
-new Nelore();
-```
-
-se utiliza una clase fábrica que decide cuál objeto crear.
+En lugar de crear objetos directamente con `new Brahman()` o `new Nelore()`, se utiliza una fábrica (`RazaFactory`) que decide qué clase instanciar.
 
 ## Problema que resuelve
 
-Si la creación de objetos está dispersa en muchos archivos, cualquier cambio obliga a modificar múltiples puntos del sistema.
+Cuando la creación de objetos está dispersa en muchos archivos, cualquier cambio obliga a modificar varios puntos del sistema.
 
-## Solución implementada
+## Implementación realizada
 
-Se creó una fábrica llamada `RazaFactory` que recibe el nombre de una raza y devuelve la instancia correspondiente.
+Se creó:
 
-## Archivos creados
+* `IRazaFactory`
+* `RazaFactory`
+* `Raza`
+* `Brahman`
+* `Nelore`
+* `Angus`
 
-* `Contracts/IRazaFactory.php`
-* `Factories/RazaFactory.php`
-* `Domain/Razas/Raza.php`
-* `Domain/Razas/Brahman.php`
-* `Domain/Razas/Nelore.php`
-* `Domain/Razas/Angus.php`
+La clase `RazaFactory` utiliza un arreglo asociativo para mapear el nombre de la raza a la clase correspondiente.
 
 ## Beneficios
 
-* La creación de objetos queda centralizada.
-* Agregar una nueva raza es sencillo.
-* El código cliente no depende de clases concretas.
+* Centraliza la creación de objetos.
+* Facilita agregar nuevas razas.
+* Evita dependencias directas con clases concretas.
 
 ---
 
@@ -66,34 +81,29 @@ Se creó una fábrica llamada `RazaFactory` que recibe el nombre de una raza y d
 
 El patrón Repository abstrae el acceso a los datos.
 
-La lógica de negocio no consulta directamente la base de datos, sino que utiliza una interfaz.
+La lógica de negocio no consulta directamente la base de datos, sino que utiliza una interfaz con métodos del dominio.
 
 ## Problema que resuelve
 
-Cuando el código usa directamente consultas a la base de datos, queda acoplado al ORM o a la tecnología de persistencia.
+Evita que los servicios dependan directamente del ORM o de la base de datos.
 
-## Solución implementada
+## Implementación realizada
 
-Se definió la interfaz `IAnimalRepository` y dos implementaciones:
+Se creó:
 
+* `IAnimalRepository`
 * `EloquentAnimalRepository`
 * `InMemoryAnimalRepository`
+* `Animal`
+* `ReporteService`
 
-El servicio `ReporteService` utiliza la interfaz en lugar de acceder directamente a los datos.
-
-## Archivos creados
-
-* `Contracts/IAnimalRepository.php`
-* `Repositories/EloquentAnimalRepository.php`
-* `Repositories/InMemoryAnimalRepository.php`
-* `Models/Animal.php`
-* `Services/ReporteService.php`
+`ReporteService` recibe `IAnimalRepository` por inyección de dependencias.
 
 ## Beneficios
 
-* La lógica de negocio no depende de Eloquent.
-* Es más fácil cambiar la tecnología de persistencia.
-* Se facilitan las pruebas unitarias.
+* Permite cambiar la fuente de datos fácilmente.
+* Facilita las pruebas unitarias.
+* Reduce el acoplamiento.
 
 ---
 
@@ -105,36 +115,35 @@ El patrón Observer permite que varios objetos reaccionen automáticamente cuand
 
 ## Problema que resuelve
 
-Cuando una acción debe desencadenar muchas tareas (notificar, recalcular, enviar webhooks, etc.), el código se vuelve grande y fuertemente acoplado.
+Evita que una sola clase tenga que llamar manualmente a muchos procesos secundarios.
 
-## Solución implementada
+## Implementación realizada
 
-Se creó un `RegistroPesoSubject` que mantiene una lista de observadores.
+Se creó:
 
-Cada vez que se registra un peso, todos los observadores reciben la notificación.
-
-## Observadores implementados
-
+* `IRegistroPesoObserver`
+* `RegistroPesoSubject`
 * `NotificadorPropietario`
 * `RecalculadorICC`
 * `WebhookSenasa`
 * `AlertaSMS`
+* `RegistroPeso`
 
-## Archivos creados
+Cuando se registra un peso, el subject notifica a todos los observadores suscritos.
 
-* `Contracts/IRegistroPesoObserver.php`
-* `Models/RegistroPeso.php`
-* `Observers/RegistroPesoSubject.php`
-* `Observers/NotificadorPropietario.php`
-* `Observers/RecalculadorICC.php`
-* `Observers/WebhookSenasa.php`
-* `Observers/AlertaSMS.php`
+## Prueba incluida
+
+Se agregó el archivo:
+
+* `app/tests/RegistroPesoSubjectTest.php`
+
+Esta prueba utiliza spies para verificar que todos los observadores reciben la notificación.
 
 ## Beneficios
 
-* El sujeto no conoce los detalles de los observadores.
-* Se pueden agregar nuevos observadores sin modificar el código existente.
+* Permite agregar nuevos observadores sin modificar el subject.
 * Reduce el acoplamiento.
+* Facilita la extensión del sistema.
 
 ---
 
@@ -142,78 +151,61 @@ Cada vez que se registra un peso, todos los observadores reciben la notificació
 
 ## ¿Qué es?
 
-El patrón Strategy encapsula diferentes algoritmos que resuelven el mismo problema.
+El patrón Strategy encapsula diferentes algoritmos en clases separadas.
 
 ## Problema que resuelve
 
-Evita estructuras grandes de `if/else` o `switch` para seleccionar entre múltiples algoritmos.
+Evita el uso de grandes estructuras `if/else` o `switch` para seleccionar algoritmos.
 
-## Solución implementada
+## Implementación realizada
 
-Se creó la interfaz `IAlgoritmoEstimacion` y tres estrategias concretas:
+Se creó:
 
+* `IAlgoritmoEstimacion`
+* `ResultadoEstimacion`
 * `AlgoritmoYolov8`
 * `AlgoritmoRegresionLineal`
 * `AlgoritmoTablaReferencia`
+* `EstimadorPesoService`
 
-El servicio `EstimadorPesoService` recibe una estrategia y la ejecuta.
-
-## Archivos creados
-
-* `Contracts/IAlgoritmoEstimacion.php`
-* `ValueObjects/ResultadoEstimacion.php`
-* `Strategies/AlgoritmoYolov8.php`
-* `Strategies/AlgoritmoRegresionLineal.php`
-* `Strategies/AlgoritmoTablaReferencia.php`
-* `Services/EstimadorPesoService.php`
+`EstimadorPesoService` recibe una estrategia por constructor y la ejecuta.
 
 ## Beneficios
 
-* Cada algoritmo está en su propia clase.
-* Es fácil agregar nuevos métodos de estimación.
+* Cada algoritmo está separado en su propia clase.
+* Es fácil agregar nuevas estrategias.
 * El servicio principal no necesita modificarse.
 
 ---
 
-# Estructura General del Proyecto
+# Archivos Adicionales
 
-```text
-LabCatalogoPatrones/
-└── app/
-    ├── Contracts/
-    ├── Domain/
-    ├── Factories/
-    ├── Models/
-    ├── Observers/
-    ├── Repositories/
-    ├── Services/
-    ├── Strategies/
-    └── ValueObjects/
-```
+## README.md
+
+Documento con la explicación de cada patrón y el resumen del laboratorio.
+
+## Prueba del Observer
+
+`app/tests/RegistroPesoSubjectTest.php` verifica que todos los observadores suscritos reciben la notificación.
+
+---
+
+# Notas sobre Laravel
+
+El PDF menciona registrar dependencias en el contenedor de Laravel (`singleton` y `bind`). Como este proyecto no es una aplicación Laravel completa, estas configuraciones no se ejecutan, pero el diseño del código sí sigue el mismo enfoque de inyección de dependencias.
 
 ---
 
 # Conclusiones
 
-La aplicación de patrones de diseño permite:
+La aplicación de patrones de diseño permitió:
 
 * Reducir el acoplamiento entre clases.
 * Facilitar la extensión del sistema.
-* Mejorar la mantenibilidad del código.
-* Favorecer las pruebas unitarias.
-* Organizar mejor la arquitectura del software.
+* Mejorar la organización del código.
+* Hacer el sistema más fácil de probar.
 
-Cada patrón resuelve un problema específico:
-
-| Patrón     | Objetivo Principal                         |
-| ---------- | ------------------------------------------ |
-| Factory    | Centralizar la creación de objetos         |
-| Repository | Abstraer el acceso a los datos             |
-| Observer   | Notificar múltiples objetos ante un evento |
-| Strategy   | Intercambiar algoritmos fácilmente         |
-
----
-
-# Autor
-
-Alexander Umaña Guevara
+| Patrón     | Objetivo                           |
+| ---------- | ---------------------------------- |
+| Factory    | Centralizar la creación de objetos |
+| Repository | Abstr                              |
